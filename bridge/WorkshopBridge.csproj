@@ -1,0 +1,11 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>0.1.0.0</Version>
+    <Author>Dediinside</Author>
+    <Name>FFXIV Workshop Bridge</Name>
+    <Punchline>Export profession levels and EXP to your local FFXIV Workshop.</Punchline>
+    <Description>Writes a local character snapshot for FFXIV Workshop. Use /workshop for one export or /workshop auto to toggle automatic export. Does not automate the game.</Description>
+    <RepoUrl>https://github.com/Dediinside/ffxiv-workshop</RepoUrl>
+    <Tags>crafting;levels;local</Tags>
+  </PropertyGroup>
+</Project>
