@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FFXIV Мастерская</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">◇</span>
+        <div>МАСТЕРСКАЯ<small>FINAL FANTASY XIV</small></div>
+      </div>
+      <div class="nav-label">ВАШИ ИНСТРУМЕНТЫ</div>
+      <nav id="nav"></nav>
+      <div class="side-bottom">
+        <span class="online-dot"></span> Работает на вашем ПК
+        <div id="version">Версия 0.1.0</div>
+        <button id="shutdown" class="quiet">Завершить приложение</button>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div class="breadcrumb">
+          Мастерская <span>/</span> <b id="crumb">Прокачка</b>
+        </div>
+        <div class="header-tags">
+          <span id="mode-tag" class="pill">Локальное приложение</span
+          ><span id="world-tag" class="pill">Shiva · Light</span>
+        </div>
+      </header>
+      <section class="page-heading">
+        <div>
+          <div id="eyebrow" class="eyebrow">ПЛАНИРУЙТЕ С УВЕРЕННОСТЬЮ</div>
+          <h1 id="title">Прокачка через leves</h1>
+          <p id="subtitle"></p>
+        </div>
+        <button id="profile-shortcut" class="secondary">
+          Мои профессии ↗
+        </button>
+      </section>
+      <div id="view"></div>
+      <footer>
+        <span>Данные рынка · Universalis</span
+        ><span>Спрос и прибыль — оценка по наблюдаемым продажам.</span
+        ><span id="update-note">Проверка обновлений…</span>
+      </footer>
+    </main>
+    <div id="toast" role="status"></div>
+    <dialog id="craft-modal">
+      <div class="modal-title">
+        <div>
+          <span class="eyebrow">ВЫБРАННЫЙ ПЛАН</span>
+          <h2>Список изготовления</h2>
+        </div>
+        <button
+          id="modal-close"
+          class="icon-button"
+          aria-label="Закрыть список"
+        >
+          ✕
+        </button>
+      </div>
+      <p id="craft-note"></p>
+      <label>List Name<input id="craft-name" type="text" value="FFXIV Workshop"></label>
+      <div class="craft-grid">
+        <section>
+          <div class="section-title">
+            Pre-craft Items
+            <button id="copy-pre" class="quiet">Копировать</button>
+          </div>
+          <textarea id="craft-pre" readonly></textarea>
+        </section>
+        <section>
+          <div class="section-title">
+            Final Items
+            <button id="copy-final" class="quiet">Копировать</button>
+          </div>
+          <textarea id="craft-final" readonly></textarea>
+        </section>
+      </div>
+      <button id="save-craft">Сохранить TXT</button>
+      <button id="copy-name" class="secondary">Копировать имя списка</button>
+    </dialog>
+    <script src="/app.js"></script>
+  </body>
+</html>
