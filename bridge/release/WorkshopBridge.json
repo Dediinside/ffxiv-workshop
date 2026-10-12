@@ -1,0 +1,21 @@
+{
+  "Author": "Dediinside",
+  "Name": "FFXIV Workshop Bridge",
+  "InternalName": "WorkshopBridge",
+  "AssemblyVersion": "0.1.0.0",
+  "Description": "Writes a local character snapshot for FFXIV Workshop. Use /workshop for one export or /workshop auto to toggle automatic export. Does not automate the game.",
+  "ApplicableVersion": "any",
+  "RepoUrl": "https://github.com/Dediinside/ffxiv-workshop",
+  "Tags": [
+    "crafting",
+    "levels",
+    "local"
+  ],
+  "DalamudApiLevel": 15,
+  "LoadRequiredState": 0,
+  "LoadSync": false,
+  "CanUnloadAsync": false,
+  "LoadPriority": 0,
+  "Punchline": "Export profession levels and EXP to your local FFXIV Workshop.",
+  "AcceptsFeedback": true
+}
