@@ -1,0 +1,243 @@
+{
+  "worlds": {
+    "21": "Ravana",
+    "22": "Bismarck",
+    "23": "Asura",
+    "24": "Belias",
+    "28": "Pandaemonium",
+    "29": "Shinryu",
+    "30": "Unicorn",
+    "31": "Yojimbo",
+    "32": "Zeromus",
+    "33": "Twintania",
+    "34": "Brynhildr",
+    "35": "Famfrit",
+    "36": "Lich",
+    "37": "Mateus",
+    "39": "Omega",
+    "40": "Jenova",
+    "41": "Zalera",
+    "42": "Zodiark",
+    "43": "Alexander",
+    "44": "Anima",
+    "45": "Carbuncle",
+    "46": "Fenrir",
+    "47": "Hades",
+    "48": "Ixion",
+    "49": "Kujata",
+    "50": "Typhon",
+    "51": "Ultima",
+    "52": "Valefor",
+    "53": "Exodus",
+    "54": "Faerie",
+    "55": "Lamia",
+    "56": "Phoenix",
+    "57": "Siren",
+    "58": "Garuda",
+    "59": "Ifrit",
+    "60": "Ramuh",
+    "61": "Titan",
+    "62": "Diabolos",
+    "63": "Gilgamesh",
+    "64": "Leviathan",
+    "65": "Midgardsormr",
+    "66": "Odin",
+    "67": "Shiva",
+    "68": "Atomos",
+    "69": "Bahamut",
+    "70": "Chocobo",
+    "71": "Moogle",
+    "72": "Tonberry",
+    "73": "Adamantoise",
+    "74": "Coeurl",
+    "75": "Malboro",
+    "76": "Tiamat",
+    "77": "Ultros",
+    "78": "Behemoth",
+    "79": "Cactuar",
+    "80": "Cerberus",
+    "81": "Goblin",
+    "82": "Mandragora",
+    "83": "Louisoix",
+    "85": "Spriggan",
+    "86": "Sephirot",
+    "87": "Sophia",
+    "88": "Zurvan",
+    "90": "Aegis",
+    "91": "Balmung",
+    "92": "Durandal",
+    "93": "Excalibur",
+    "94": "Gungnir",
+    "95": "Hyperion",
+    "96": "Masamune",
+    "97": "Ragnarok",
+    "98": "Ridill",
+    "99": "Sargatanas",
+    "400": "Sagittarius",
+    "401": "Phantom",
+    "402": "Alpha",
+    "403": "Raiden",
+    "404": "Marilith",
+    "405": "Seraph",
+    "406": "Halicarnassus",
+    "407": "Maduin",
+    "408": "Cuchulainn",
+    "409": "Kraken",
+    "410": "Rafflesia",
+    "411": "Golem"
+  },
+  "dcs": [
+    {
+      "name": "Elemental",
+      "region": "Japan",
+      "worlds": [
+        45,
+        49,
+        50,
+        58,
+        68,
+        72,
+        90,
+        94
+      ]
+    },
+    {
+      "name": "Gaia",
+      "region": "Japan",
+      "worlds": [
+        43,
+        46,
+        51,
+        59,
+        69,
+        76,
+        92,
+        98
+      ]
+    },
+    {
+      "name": "Mana",
+      "region": "Japan",
+      "worlds": [
+        23,
+        28,
+        44,
+        47,
+        48,
+        61,
+        70,
+        96
+      ]
+    },
+    {
+      "name": "Aether",
+      "region": "North-America",
+      "worlds": [
+        40,
+        54,
+        57,
+        63,
+        65,
+        73,
+        79,
+        99
+      ]
+    },
+    {
+      "name": "Primal",
+      "region": "North-America",
+      "worlds": [
+        35,
+        53,
+        55,
+        64,
+        77,
+        78,
+        93,
+        95
+      ]
+    },
+    {
+      "name": "Chaos",
+      "region": "Europe",
+      "worlds": [
+        39,
+        71,
+        80,
+        83,
+        85,
+        97,
+        400,
+        401
+      ]
+    },
+    {
+      "name": "Light",
+      "region": "Europe",
+      "worlds": [
+        33,
+        36,
+        42,
+        56,
+        66,
+        67,
+        402,
+        403
+      ]
+    },
+    {
+      "name": "Crystal",
+      "region": "North-America",
+      "worlds": [
+        34,
+        37,
+        41,
+        62,
+        74,
+        75,
+        81,
+        91
+      ]
+    },
+    {
+      "name": "Materia",
+      "region": "Oceania",
+      "worlds": [
+        21,
+        22,
+        86,
+        87,
+        88
+      ]
+    },
+    {
+      "name": "Meteor",
+      "region": "Japan",
+      "worlds": [
+        24,
+        29,
+        30,
+        31,
+        32,
+        52,
+        60,
+        82
+      ]
+    },
+    {
+      "name": "Dynamis",
+      "region": "North-America",
+      "worlds": [
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411
+      ]
+    }
+  ],
+  "fetched_at": "2026-10-11T23:27:50.010761+00:00"
+}
