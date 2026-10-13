@@ -416,6 +416,13 @@ function calculationForm() {
         'min="1"',
       ) +
       field(
+        "Последняя продажа ≤ часов",
+        "max_sale_hours",
+        saved.max_sale_hours ?? p.reseller.max_sale_hours ?? 72,
+        "number",
+        'min="1" max="168" step="1" title="Давность последней продажи на домашнем мире; после простоя серверов можно увеличить до 48–72 часов"',
+      ) +
+      field(
         "Срок продажи ≤ дней",
         "max_days",
         saved.max_days ?? 3,
