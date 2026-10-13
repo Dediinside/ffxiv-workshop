@@ -110,7 +110,7 @@ class Service:
                     self.last_character = raw['updated_at']
             except (OSError, ValueError, TypeError):
                 pass
-        return dict(version='0.1.1', demo=self.demo, profile=profile, warning=' '.join([self.profile.warning, *self.catalog_warnings]).strip(),
+        return dict(version='0.1.2', demo=self.demo, profile=profile, warning=' '.join([self.profile.warning, *self.catalog_warnings]).strip(),
                     worlds=sorted(self.regions['worlds'].values()), dcs=[d['name'] for d in self.regions['dcs']],
                     leve_cap=self.leves['level_cap'], recipes=len(self.market_data['recipes']), leves=len(self.leves['leves']),
                     items=len(self.reseller_items), token_saved=(self.folder / 'telegram-secret.json').exists(),
@@ -320,7 +320,10 @@ class Service:
         else:
             sent = 0
         chosen = {d.fingerprint for d in result.basket}
-        return dict(rows=[{**serial(d), 'id': d.fingerprint, 'recommended':d.fingerprint in chosen, 'details': d.detail(), 'buy_url': d.buy_url, 'sale_url': d.sale_url} for d in result.deals],
+        historical = sum(d.historical for d in result.deals)
+        if historical:
+            result.warnings.append(f'Исторических кандидатов: {historical}. Покупку и цену продажи проверьте в игре; эти строки не отправляются в Telegram.')
+        return dict(rows=[{**serial(d), 'id': d.fingerprint, 'market_status': d.market_status, 'recommended':d.fingerprint in chosen, 'details': d.detail(), 'buy_url': d.buy_url, 'sale_url': d.sale_url} for d in result.deals],
                     warnings=result.warnings, summary=dict(found=len(result.deals), checked=result.detailed, sent=sent, reasons=dict(result.reasons)))
 
     def monitor(self, options, profile, cancel, progress, task):
@@ -356,14 +359,14 @@ class Service:
                         rows[d.fingerprint] = d
                 if deals:
                     self.history.add(deals)
-                publish(dict(sent=sent, events=events, dropped=dropped, expired=expired, spent=spent), errors)
+                publish(dict(sent=sent, events=events, dropped=dropped, expired=expired, spent=spent, reasons=dict(reasons)), errors)
         def publish(summary=None, warnings=None):
             for d in rows.values():
                 if d.availability == FRESH and time.time() - d.received >= 90:
                     d.availability = STALE
             with self.lock:
                 previous = task.get('result') or {}
-                task['result'] = dict(rows=[{**serial(d), 'id': d.fingerprint, 'details': d.detail(), 'buy_url': d.buy_url, 'sale_url': d.sale_url} for d in rows.values()],
+                task['result'] = dict(rows=[{**serial(d), 'id': d.fingerprint, 'market_status': d.market_status, 'details': d.detail(), 'buy_url': d.buy_url, 'sale_url': d.sale_url} for d in rows.values()],
                                       summary=summary or previous.get('summary', {}), warnings=warnings or previous.get('warnings', []))
         HotMonitor(self.scanner, self.folder, self.notifier).run(settings, cancel, emit, bot)
         return None
