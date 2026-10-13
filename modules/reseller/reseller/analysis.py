@@ -46,6 +46,13 @@ class Deal:
     signal: str = ''
     received: float = 0
     availability: str = ''
+    historical: bool = False
+    buy_upload_age: float | None = None
+    sale_upload_age: float | None = None
+
+    @property
+    def market_status(self):
+        return 'Историческая оценка' if self.historical else 'В пределах свежести'
 
     @property
     def buy_url(self):
@@ -57,12 +64,14 @@ class Deal:
 
     def detail(self):
         quality = 'HQ' if self.hq else 'NQ'
+        age_text = lambda value: f'{value / 60:.1f} ч.' if value is not None else 'не сохранён'
         reference = (f'Статус объявления: {self.availability}\n'
                      f'Сохранённая цена продажи на {self.sale_world}: {self.sale_price:,} gil/шт.\n'
                      f'На момент находки: {time.strftime("%d.%m.%Y %H:%M:%S", time.localtime(self.received))}\n'
                      'Цена и прибыль относятся к сохранённому расчёту. Перед выставлением проверьте рынок продажи.\n'
                      'Исчезновение объявления не подтверждает вашу покупку.\n\n') if self.availability else ''
-        return (reference + (self.signal + '\n' if self.signal else '') + f'{self.name} #{self.item} · {quality}\n'
+        stale_note = ('ИСТОРИЧЕСКАЯ ОЦЕНКА: цена или объявление могли измениться. Проверьте покупку и продажу в игре; Telegram по этой оценке не отправляется.\n\n' if self.historical else '')
+        return (stale_note + reference + (self.signal + '\n' if self.signal else '') + f'{self.name} #{self.item} · {quality}\n'
                 f'Купить: {self.buy_world} · {self.quantity} шт. × {self.buy_price:,} gil\n'
                 f'Обычная цена по продажам: {self.usual_price:,} gil/шт.\n'
                 f'Предложенная продажа на {self.sale_world}: {self.sale_price:,} gil/шт.\n'
@@ -73,6 +82,7 @@ class Deal:
                 f'Дней с продажами: {self.active_days}; близкие конкуренты: {self.near_supply} шт. / {self.supply_days:.1f} дней общего спроса\n'
                 f'Конкуренты по цене не выше нашей: {self.competition} шт.; срок по модели: {self.estimated_days:.1f} дней\n'
                 f'Возраст данных: {self.upload_age:.0f} мин.\n'
+                f'Данные покупки: {age_text(self.buy_upload_age)}; данные продажи: {age_text(self.sale_upload_age)}\n'
                 + ('История достигла лимита: спрос — нижняя граница.\n' if self.truncated else '')
                 + 'Каждая строка — отдельная покупка целого стака. Срок и прибыль — оценка, продажи не гарантированы.')
 
@@ -97,6 +107,8 @@ def basket(deals, settings):
     selected, used, cost = [], set(), 0
     limit = None if settings['budget'] is None else settings['budget'] * (1 - settings['reserve_percent'] / 100)
     for deal in rank(deals, settings):
+        if deal.historical:
+            continue
         key = (deal.item, deal.hq)
         if key in used or limit is not None and cost + deal.cost > limit:
             continue
@@ -114,6 +126,8 @@ def analyze(items, snapshots, settings, worlds, dc_worlds, now=None):
     if target not in dc_worlds:
         raise ValueError('Мир продажи не принадлежит выбранному DC')
     reasons, output = Counter(), []
+    fresh_minutes = settings['max_upload_minutes']
+    allowed_minutes = settings.get('stale_market_hours', 72) * 60 if settings.get('post_patch', False) else fresh_minutes
     for item, snap in snapshots.items():
         if snap.errors:
             reasons['ошибка API / нет данных'] += 1
@@ -122,7 +136,7 @@ def analyze(items, snapshots, settings, worlds, dc_worlds, now=None):
             reasons['старый снимок кэша'] += 1
             continue
         target_time = snap.uploads.get(target, 0)
-        if not 0 <= now - target_time <= settings['max_upload_minutes'] * 60:
+        if not 0 <= now - target_time <= allowed_minutes * 60:
             reasons['старые цены мира продажи'] += 1
             continue
         qualities = (False, True) if settings['quality'] == 'Все' else (settings['quality'] == 'HQ',)
@@ -163,7 +177,7 @@ def analyze(items, snapshots, settings, worlds, dc_worlds, now=None):
                 # lastReviewTime is placement time, not observation time (Universalis Swagger).
                 stamp = snap.uploads.get(listing.world, 0)
                 age = (now - stamp) / 60
-                if not 0 <= age <= settings['max_upload_minutes']:
+                if not 0 <= age <= allowed_minutes:
                     reasons['старые цены покупки'] += 1
                     continue
                 discount = (1 - listing.price / median) * 100
@@ -194,6 +208,8 @@ def analyze(items, snapshots, settings, worlds, dc_worlds, now=None):
                                        cost, revenue, profit, roi, discount, velocity, len(sales), days, ahead,
                                        max(age, (now - target_time) / 60), key, snap.truncated)
                     deal.stress_profit, deal.near_supply, deal.supply_days, deal.active_days = stress_profit, near, supply_days, active_days
+                    deal.buy_upload_age, deal.sale_upload_age = age, (now - target_time) / 60
+                    deal.historical = max(deal.buy_upload_age, deal.sale_upload_age) > fresh_minutes
                     deal.offer_key = listing.offer_key
                     if deal.offer_key:
                         deal.fingerprint = hashlib.sha256(f'{deal.offer_key}:{target}'.encode()).hexdigest()

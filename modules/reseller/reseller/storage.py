@@ -28,7 +28,7 @@ def defaults():
                 market_share=25, buy_tax=5, sell_tax=5, travel=0, undercut=1,
                 interval_minutes=5, overview_limit=3000, detail_limit=100,
                 notify=False, chat_id='', alert_limit=10, cooldown_minutes=120,
-                stress_drop=10, reserve_percent=20, min_active_days=3,
+                stress_drop=10, reserve_percent=20, min_active_days=3, post_patch=False, stale_market_hours=72,
                 nearby_percent=5, max_supply_days=7, priority='Оборот прибыли', hot_improvement=25)
 
 
@@ -46,9 +46,12 @@ def normalize(raw):
     if not isinstance(raw.get('notify', False), bool):
         raise ValueError('Некорректная настройка Telegram')
     result['notify'] = raw.get('notify', False)
+    if not isinstance(raw.get('post_patch', False), bool):
+        raise ValueError('Некорректный режим после патча')
+    result['post_patch'] = raw.get('post_patch', False)
     bounds = dict(budget=(0, 1e12), min_profit=(0, 1e12), min_roi=(0, 100000),
                   min_discount=(0, 99), min_units_day=(0, 1000000), min_deals_week=(1, 100000),
-                  max_sale_hours=(1, 168), max_upload_minutes=(1, 1440), max_days=(.1, 30),
+                  max_sale_hours=(1, 168), max_upload_minutes=(1, 1440), stale_market_hours=(1, 168), max_days=(.1, 30),
                   market_share=(1, 100), buy_tax=(0, 20), sell_tax=(0, 20), travel=(0, 1e9),
                   undercut=(0, 1000000), interval_minutes=(1, 1440), overview_limit=(100, 50000),
                   detail_limit=(1, 1000), alert_limit=(1, 30), cooldown_minutes=(1, 10080),

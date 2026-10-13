@@ -76,6 +76,8 @@ class Notifier:
         now = self.now()
         output = []
         for deal in deals:
+            if deal.historical:
+                continue
             prefix = settings['chat_id'] + ':'
             exact = prefix + 'listing:' + deal.fingerprint
             group = prefix + f'item:{deal.sale_world_id}:{deal.item}:{deal.buy_world_id}:{deal.hq}'
@@ -91,6 +93,8 @@ class Notifier:
         now = self.now()
         self.state = {k: v for k, v in self.state.items() if 0 <= now - v < 30 * 86400}
         for deal in (deals if bypass_group else self.eligible(deals, settings)):
+            if deal.historical:
+                continue
             check(cancel)
             now = self.now()
             # Chat-specific state, plus per-item/world/quality cooldown across new listings.

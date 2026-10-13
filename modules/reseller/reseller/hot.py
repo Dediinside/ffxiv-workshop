@@ -177,6 +177,8 @@ class Ledger:
         return bool(row and d.buy_price <= row[0] * (1 - s['hot_improvement'] / 100))
 
     def allowed(self, d, s):
+        if d.historical:
+            return False, 'Историческая оценка: проверьте цены в игре'
         scope = self.scope(s)
         recent = self.db.execute('SELECT count(*) FROM advice WHERE scope=? AND sent>?', (scope, self.now() - 60)).fetchone()[0]
         if recent >= s['alert_limit']:
@@ -361,6 +363,8 @@ class HotMonitor:
                 if s['notify'] and bot is not None:
                     for d in deals:
                         check(cancel)
+                        if d.historical:
+                            continue
                         improved = ledger.improved(d, s)
                         if not improved and not self.notifier.eligible([d], s):
                             continue
