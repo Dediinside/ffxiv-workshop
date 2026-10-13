@@ -141,3 +141,98 @@ class ApiTests(unittest.TestCase):
             self.assertTrue(analyze(items,{10:snapshot},settings,worlds,[67,66],now)[0])
             with self.assertRaises(ValueError):
                 self.service.reseller_settings({'max_sale_hours':'169'},restored)
+
+    def test_post_patch_choice_persists_and_invalid_values_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            profile=Profile(folder,True)
+            data=profile.get()
+            data['view_options']['reseller']={'post_patch':True,'stale_market_hours':'48'}
+            profile.save(data)
+            restored=Profile(folder,True).get()
+            settings=self.service.reseller_settings(restored['view_options']['reseller'],restored)
+            self.assertTrue(settings['post_patch'])
+            self.assertEqual(settings['stale_market_hours'],48)
+            for invalid in ({'post_patch':'yes'},{'stale_market_hours':169}):
+                with self.assertRaises(ValueError):self.service.reseller_settings(invalid,restored)
+
+    def test_hot_filter_reasons_reach_the_interface(self):
+        from unittest.mock import patch
+        task={}
+        def simulated(monitor,settings,cancel,emit,bot):
+            emit('hot',([],{'старые цены мира продажи':2},0,17,0,0,[],0))
+        with patch('workshop.service.HotMonitor.run',new=simulated):
+            self.service.hot({},self.service.profile.get(),threading.Event(),lambda text:None,task)
+        self.assertEqual(task['result']['summary']['reasons'],{'старые цены мира продажи':2})
+
+
+class PostPatchTests(unittest.TestCase):
+    def setUp(self):
+        from reseller.market import Listing,Sale,Snapshot
+        from reseller.storage import defaults
+        self.now=1800000000
+        self.items={10:dict(name='Test Ingot',category='Metal',hq=False)}
+        self.worlds={67:'Shiva',66:'Odin'}
+        self.settings={**defaults(),'max_sale_hours':72}
+        self.snap=Snapshot(
+            listings=[Listing(10,66,300,10,False,self.now),Listing(10,67,1000,2,False,self.now)],
+            sales=[Sale(1000,10,False,self.now-36*3600-i*4*3600) for i in range(25)],
+            uploads={67:self.now-30*3600,66:self.now-29*3600},
+            listing_fetched=self.now,history_fetched=self.now)
+
+    def analyze(self,**options):
+        from reseller.analysis import analyze
+        return analyze(self.items,{10:self.snap},{**self.settings,**options},self.worlds,[67,66],self.now)
+
+    def test_old_prices_are_candidates_only_when_mode_enabled(self):
+        from reseller.analysis import basket
+        self.assertFalse(self.analyze()[0])
+        rows,_=self.analyze(post_patch=True)
+        self.assertEqual(len(rows),1)
+        deal=rows[0]
+        self.assertTrue(deal.historical)
+        self.assertEqual(deal.sale_upload_age,30*60)
+        self.assertEqual(deal.buy_upload_age,29*60)
+        self.assertIn('ИСТОРИЧЕСКАЯ ОЦЕНКА',deal.detail())
+        self.assertFalse(basket(rows,self.settings))
+
+    def test_historical_candidates_cannot_notify_or_reserve_budget(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from reseller.telegram import Notifier
+        from reseller.hot import Ledger
+        rows,_=self.analyze(post_patch=True)
+        with tempfile.TemporaryDirectory() as folder:
+            notifier=Notifier(Path(folder)/'alerts.json',now=lambda:self.now)
+            bot=SimpleNamespace(send=Mock())
+            delivered=[]
+            self.assertFalse(notifier.eligible(rows,self.settings))
+            self.assertEqual(notifier.dispatch(rows,self.settings,bot,bypass_group=True,on_delivered=delivered.append),(0,[]))
+            bot.send.assert_not_called()
+            self.assertFalse(delivered)
+            ledger=Ledger(Path(folder)/'ledger.sqlite3',now=lambda:self.now)
+            try:
+                self.assertFalse(ledger.allowed(rows[0],self.settings)[0])
+                self.assertEqual(ledger.spent(self.settings),0)
+            finally:ledger.close()
+
+    def test_unknown_future_over_age_and_failed_api_remain_rejected(self):
+        for stamp in (0,self.now+1,self.now-73*3600):
+            self.snap.uploads[67]=stamp
+            self.assertFalse(self.analyze(post_patch=True)[0])
+        self.snap.uploads[67]=self.now-30*3600
+        self.snap.errors=['History unavailable']
+        self.assertFalse(self.analyze(post_patch=True)[0])
+        self.snap.errors=[]
+        self.snap.listing_fetched=self.now-301
+        self.assertFalse(self.analyze(post_patch=True)[0])
+
+    def test_fresh_prices_stay_eligible_and_profit_filters_still_apply(self):
+        from reseller.analysis import basket
+        self.snap.uploads={67:self.now,66:self.now}
+        rows,_=self.analyze(post_patch=True)
+        self.assertTrue(rows)
+        self.assertFalse(rows[0].historical)
+        self.assertTrue(basket(rows,self.settings))
+        self.assertFalse(self.analyze(post_patch=True,min_profit=100000)[0])
+        self.snap.sales=[]
+        self.assertFalse(self.analyze(post_patch=True)[0])
