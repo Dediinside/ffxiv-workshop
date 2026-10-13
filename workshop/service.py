@@ -110,7 +110,7 @@ class Service:
                     self.last_character = raw['updated_at']
             except (OSError, ValueError, TypeError):
                 pass
-        return dict(version='0.1.0', demo=self.demo, profile=profile, warning=' '.join([self.profile.warning, *self.catalog_warnings]).strip(),
+        return dict(version='0.1.1', demo=self.demo, profile=profile, warning=' '.join([self.profile.warning, *self.catalog_warnings]).strip(),
                     worlds=sorted(self.regions['worlds'].values()), dcs=[d['name'] for d in self.regions['dcs']],
                     leve_cap=self.leves['level_cap'], recipes=len(self.market_data['recipes']), leves=len(self.leves['leves']),
                     items=len(self.reseller_items), token_saved=(self.folder / 'telegram-secret.json').exists(),
@@ -275,7 +275,7 @@ class Service:
         self._market_data = value
 
     def reseller_settings(self, options, profile):
-        return normalize({**defaults(), **profile['reseller'], **options, **profile['telegram'], 'sale_world': profile['sale_world']})
+        return normalize({**defaults(), 'max_sale_hours': 72, **profile['reseller'], **options, **profile['telegram'], 'sale_world': profile['sale_world']})
 
     def bot(self, settings):
         if not settings['notify'] or self.demo:

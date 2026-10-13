@@ -60,7 +60,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200, dict(rows=[{**serial(d), 'id': d.fingerprint, 'details': d.detail(), 'buy_url': d.buy_url, 'sale_url': d.sale_url} for d in rows]))
                 if parsed.path == '/api/update':
                     from update_checker import check_release
-                    return self.send(200, check_release('Dediinside/ffxiv-workshop', '0.1.0'))
+                    return self.send(200, check_release('Dediinside/ffxiv-workshop', '0.1.1'))
                 return self.send(404, dict(error='Не найдено'))
             except (ValueError, OSError):
                 return self.send(400, dict(error='Не удалось прочитать данные'))
@@ -147,7 +147,7 @@ def serve(folder, demo=False, port=0, open_browser=True):
                 request = Request(address + '/api/meta', headers={'Authorization':'Bearer ' + previous_token})
                 with build_opener(NoRedirect()).open(request, timeout=1) as response:
                     info = json.loads(response.read(1024 * 1024))
-                if info.get('version') == '0.1.0' and info.get('demo') == demo:
+                if info.get('version') == '0.1.1' and info.get('demo') == demo:
                     webbrowser.open(address + '/#' + previous_token)
                     return
         except (OSError, ValueError, KeyError, TypeError):
