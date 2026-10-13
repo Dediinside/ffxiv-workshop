@@ -113,3 +113,31 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(task['status'],'cancelled')
             self.assertEqual(task['result']['summary']['checked'],1)
             self.assertEqual(len(calls),1)
+
+    def test_reseller_sale_age_survives_restart_and_changes_actual_filter(self):
+        from reseller.analysis import analyze
+        from reseller.market import Listing, Sale, Snapshot
+        now=1800000000
+        worlds={67:'Shiva',66:'Odin'}
+        items={10:dict(name='Test Ingot',category='Metal',hq=False)}
+        snapshot=Snapshot(
+            listings=[Listing(10,66,300,10,False,now),Listing(10,67,1000,2,False,now)],
+            sales=[Sale(1000,10,False,now-36*3600-i*4*3600) for i in range(25)],
+            uploads={67:now,66:now},listing_fetched=now,history_fetched=now)
+        with tempfile.TemporaryDirectory() as folder:
+            profile=Profile(folder,True)
+            settings=self.service.reseller_settings({},profile.get())
+            self.assertEqual(settings['max_sale_hours'],72)
+            self.assertTrue(analyze(items,{10:snapshot},settings,worlds,[67,66],now)[0])
+            data=profile.get()
+            data['view_options']['reseller']={'max_sale_hours':'24'}
+            profile.save(data)
+            restored=Profile(folder,True).get()
+            settings=self.service.reseller_settings(restored['view_options']['reseller'],restored)
+            rows,reasons=analyze(items,{10:snapshot},settings,worlds,[67,66],now)
+            self.assertFalse(rows)
+            self.assertEqual(reasons['нет недавних продаж'],1)
+            settings=self.service.reseller_settings({'max_sale_hours':'48'},restored)
+            self.assertTrue(analyze(items,{10:snapshot},settings,worlds,[67,66],now)[0])
+            with self.assertRaises(ValueError):
+                self.service.reseller_settings({'max_sale_hours':'169'},restored)
