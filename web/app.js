@@ -170,6 +170,15 @@ function render() {
   $("#calculate").onclick = () => run(page);
   if ($("#hot-start")) $("#hot-start").onclick = () => run("hot");
   if ($("#monitor-start")) $("#monitor-start").onclick = () => run("monitor");
+  const postPatch = $("input[name=post_patch]");
+  if (postPatch) {
+    const updatePostPatch = () => {
+      $("#calculate").textContent = postPatch.checked ? "Найти кандидатов по истории" : "Найти выгодные стаки";
+      $("#post-patch-note").hidden = !postPatch.checked;
+    };
+    postPatch.onchange = updatePostPatch;
+    updatePostPatch();
+  }
   $("#stop").onclick = async () => {
     if (tasks[page]) await api("cancel", { id: tasks[page] });
   };
@@ -451,6 +460,13 @@ function calculationForm() {
         'min="0" max="99"',
       ) +
       field(
+        "Исторические цены ≤ часов",
+        "stale_market_hours",
+        saved.stale_market_hours ?? p.reseller.stale_market_hours ?? 72,
+        "number",
+        'min="1" max="168" step="1" title="Применяется только в режиме после патча; возраст данных покупки и продажи"',
+      ) +
+      field(
         "Уведомлений за цикл / минуту",
         "alert_limit",
         saved.alert_limit ?? 10,
@@ -506,8 +522,10 @@ function calculationForm() {
         "number",
         'min="1" max="1000"',
       );
+    actions = check("Режим после патча", "post_patch", saved.post_patch ?? p.reseller.post_patch ?? false);
   }
-  return `<form id="calculation-form" class="panel"><div class="section-title">Параметры расчёта <small>${isLeve ? "Заготовки: купить или изготовить дешевле" : "Продажа: " + e(p.sale_world) + " · закупка: " + e(p.purchase_scope)}</small></div><div class="form-grid">${fields}</div><details><summary>Дополнительные параметры</summary><div class="form-grid" style="margin-top:15px">${advanced}</div></details><div class="form-actions"><button id="calculate" type="button">${page === "route" ? "Построить маршрут" : page === "leve" ? "Рассчитать leves" : page === "market" ? "Анализировать рынок" : "Найти выгодные стаки"}</button>${page === "reseller" ? '<button id="hot-start" class="secondary" type="button">Горячие предложения</button><button id="monitor-start" class="secondary" type="button">Периодический поиск</button>' : ""}<button id="stop" class="secondary" type="button">Остановить</button>${check("Свежие цены", "fresh", saved.fresh)}${actions}</div><div class="note-line">${isLeve ? "EXP крафта не добавляется. Доступность рецептов проверяется по общему профилю и уровню начала этапа." : "Никакие покупки в игре не выполняются. Высокая цена без спроса не становится рекомендацией."}</div></form>`;
+  const postPatchNote = page === "reseller" ? '<div id="post-patch-note" class="warning" hidden>Режим после патча: устаревшие цены дают только исторических кандидатов. Проверьте наличие стака и цену продажи в игре; по таким строкам Telegram не отправляется. Без обновлений Universalis горячий поток не обнаруживает новых объявлений — используйте обычный поиск.</div>' : "";
+  return `<form id="calculation-form" class="panel"><div class="section-title">Параметры расчёта <small>${isLeve ? "Заготовки: купить или изготовить дешевле" : "Продажа: " + e(p.sale_world) + " · закупка: " + e(p.purchase_scope)}</small></div><div class="form-grid">${fields}</div><details><summary>Дополнительные параметры</summary><div class="form-grid" style="margin-top:15px">${advanced}</div></details><div class="form-actions"><button id="calculate" type="button">${page === "route" ? "Построить маршрут" : page === "leve" ? "Рассчитать leves" : page === "market" ? "Анализировать рынок" : "Найти выгодные стаки"}</button>${page === "reseller" ? '<button id="hot-start" class="secondary" type="button">Горячие предложения</button><button id="monitor-start" class="secondary" type="button">Периодический поиск</button>' : ""}<button id="stop" class="secondary" type="button">Остановить</button>${check("Свежие цены", "fresh", saved.fresh)}${actions}</div>${postPatchNote}<div class="note-line">${isLeve ? "EXP крафта не добавляется. Доступность рецептов проверяется по общему профилю и уровню начала этапа." : "Никакие покупки в игре не выполняются. Высокая цена без спроса не становится рекомендацией."}</div></form>`;
 }
 async function run(kind) {
   try {
@@ -542,6 +560,8 @@ async function pollTask(view, id) {
 }
 function statusClass(row) {
   const status = row.availability;
+  if (status === "Снято или изменено") return "status-removed";
+  if (row.historical) return "status-stale";
   return row.recommended
     ? "status-fresh"
     : status === "Снято или изменено"
@@ -583,6 +603,8 @@ function columns() {
   return [
     ["name", "Товар"],
     ["availability", "Статус"],
+    ["market_status", "Данные расчёта"],
+    ["upload_age", "Возраст цен, мин."],
     ["sale_price", "Продажа/шт."],
     ["sale_world", "Продать на"],
     ["buy_world", "Купить на"],
@@ -692,11 +714,12 @@ function renderResults() {
             `<tr data-id="${e(r.id)}" class="${statusClass(r)} ${String(r.id) === String(selected[page]) ? "selected" : ""}">${cols
               .map(([key]) => {
                 let value = r[key];
+                if (key === "market_status") value = r.market_status ?? (r.historical ? "Историческая оценка" : "На момент находки");
                 if (key === "hq") value = value ? "HQ" : "NQ";
                 if (key === "feasible")
                   value = value ? page === "route" ? "Цена оценена" : "Доступно" : "Есть ограничения";
                 if (key === "recommended")
-                  value = value == null ? "—" : value ? "Рекомендовано" : "Альтернатива";
+                  value = r.historical ? "Проверить в игре" : value == null ? "—" : value ? "Рекомендовано" : "Альтернатива";
                 if (key === "window_wait" && value != null) value /= 60;
                 if (typeof value === "number")
                   value =
